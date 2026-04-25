@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Code Infinity | Daily Quests & Share Card</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+    <!-- html2canvas لتحويل العنصر إلى صورة -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Cairo', 'Segoe UI', system-ui, sans-serif;
+        }
+
+        :root {
+            --bg-dark: #0a0f1e;
+            --bg-card: #111827;
+            --primary-neon: #00ff88;
+            --primary-glow: #00ff88aa;
+            --secondary-neon: #ff44cc;
+            --accent-purple: #7c3aed;
+            --accent-yellow: #fbbf24;
+            --text-light: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border-glow: #00ff8844;
+            --danger: #ef4444;
+            --quest-gold: #ffd700;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0f1e 0%, #0f172a 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--primary-neon); border-radius: 10px; }
+
+        .app-container {
+            display: none;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .auth-container {
+            max-width: 500px;
+            margin: 4rem auto;
+            background: var(--bg-card);
+            border-radius: 2rem;
+            padding: 2rem;
+            border: 2px solid var(--primary-neon);
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+
+        .nav {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card);
+            padding: 0.8rem 2rem;
+            border-radius: 3rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--primary-neon);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary-neon), var(--secondary-neon));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px var(--primary-glow);
+        }
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav-btn {
+            background: rgba(0,255,136,0.1);
+            border: 1px solid var(--primary-neon);
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            color: var(--text-light);
+            transition: 0.3s;
+        }
+        .nav-btn:hover {
+            background: var(--primary-neon);
+            color: #0a0f1e;
+            box-shadow: 0 0 15px var(--primary-neon);
+            transform: scale(1.05);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            border: 1px solid var(--primary-neon);
+            box-shadow: 0 5px 20px rgba(0,255,136,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-neon), var(--secondary-neon));
+        }
+
+        .lessons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.8rem;
+            margin: 1.5rem 0;
+        }
+
+        .level-tag {
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--primary-neon), var(--accent-purple));
+            color: #0a0f1e;
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--primary-neon), var(--accent-purple));
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 2rem;
+            color: #0a0f1e;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px var(--primary-neon);
+        }
+
+        /* مهمات يومية */
+        .daily-quests {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .quest-item {
+            background: rgba(0,255,136,0.05);
+            border: 1px solid var(--border-glow);
+            border-radius: 1rem;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: 0.3s;
+        }
+        .quest-item.completed {
+            opacity: 0.6;
+            border-color: var(--accent-yellow);
+            background: rgba(251,191,36,0.1);
+        }
+        .quest-icon {
+            font-size: 2rem;
+        }
+        .quest-info {
+            flex: 1;
+        }
+        .quest-title {
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .quest-reward {
+            font-size: 0.7rem;
+            color: var(--accent-yellow);
+        }
+        .quest-status {
+            font-size: 1.5rem;
+        }
+        .reset-timer {
+            color: var(--primary-neon);
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        /* Share Card */
+        .share-card-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .share-card {
+            background: linear-gradient(135deg, #0f172a, #1e1b4b);
+            border-radius: 2rem;
+            padding: 1.5rem;
+            text-align: center;
+            border: 2px solid var(--primary-neon);
+            box-shadow: 0 0 30px var(--primary-glow);
+            max-width: 400px;
+            width: 100%;
+        }
+        .share-card-header {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .share-card-name {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary-neon);
+        }
+        .share-card-stats {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 1rem;
+        }
+        .share-card-xp {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--accent-yellow);
+        }
+        .share-card-level {
+            font-size: 1.2rem;
+        }
+        .share-card-badges {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+        .share-footer {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 1rem;
+        }
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .progress-bar {
+            background: #1e293b;
+            border-radius: 1rem;
+            height: 12px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, var(--primary-neon), var(--secondary-neon));
+            width: 0%;
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, var(--accent-yellow), #ff8800);
+            color: #1a1a2e;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin: 0.2rem;
+        }
+
+        .celebration-toast, .xp-notification {
+            position: fixed;
+            z-index: 2000;
+            animation: slideUp 0.5s ease, fadeOut 0.5s ease 2.5s forwards;
+        }
+        .celebration-toast {
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--primary-neon), var(--secondary-neon));
+            color: #0a0f1e;
+            padding: 1rem 2rem;
+            border-radius: 3rem;
+            font-weight: bold;
+            box-shadow: 0 0 30px var(--primary-neon);
+        }
+        .xp-notification {
+            top: 100px;
+            right: 20px;
+            background: var(--primary-neon);
+            color: #0a0f1e;
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            animation: slideInRight 0.5s ease, fadeOut 0.5s ease 2s forwards;
+        }
+        @keyframes slideUp {
+            from { bottom: -100px; opacity: 0; }
+            to { bottom: 30px; opacity: 1; }
+        }
+        @keyframes slideInRight {
+            from { right: -200px; opacity: 0; }
+            to { right: 20px; opacity: 1; }
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
+        }
+
+        input, select {
+            background: #1e293b;
+            border: 1px solid var(--primary-neon);
+            padding: 0.8rem;
+            border-radius: 1rem;
+            width: 100%;
+            color: white;
+            margin: 0.5rem 0;
+        }
+        .team-member {
+            background: linear-gradient(135deg, var(--primary-neon), var(--accent-purple));
+            color: #0a0f1e;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            margin: 0.3rem;
+            display: inline-block;
+            font-weight: bold;
+        }
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            margin: 1rem 0;
+        }
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .nav { flex-direction: column; gap: 1rem; }
+            .nav-links { justify-content: center; }
+        }
+
+        .quiz-option {
+            display: block;
+            margin: 0.7rem 0;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            background: rgba(0,255,136,0.05);
+            cursor: pointer;
+            border: 1px solid var(--primary-neon);
+        }
+        .quiz-option:hover {
+            background: rgba(0,255,136,0.2);
+            transform: translateX(-5px);
+        }
+    </style>
+</head>
+<body>
+<div id="authSection" class="auth-container">
+    <h2 style="text-align:center; font-size: 2rem;"><i class="fas fa-gamepad"></i> CODE INFINITY</h2>
+    <p style="text-align:center; margin-bottom:1.5rem; color:var(--primary-neon);">🎮 مستوى التعلم التالي 🎮</p>
+    <div style="display: flex; gap:1rem; justify-content:center; margin-bottom: 1.5rem;">
+        <button id="showLoginBtn" style="background:var(--primary-neon);">دخول 🎯</button>
+        <button id="showSignupBtn" class="secondary" style="background:rgba(255,68,204,0.2); border:1px solid #ff44cc;">حساب جديد ⚡</button>
+    </div>
+    <div id="loginForm">
+        <input type="email" id="loginEmail" placeholder="📧 البريد الإلكتروني"><br>
+        <input type="password" id="loginPassword" placeholder="🔒 كلمة المرور"><br>
+        <button id="doLoginBtn" style="width:100%; margin-top:1rem;">🚀 ابدأ المغامرة</button>
+    </div>
+    <div id="signupForm" style="display:none;">
+        <input type="text" id="signupName" placeholder="👤 الاسم الكامل"><br>
+        <input type="text" id="signupClass" placeholder="📚 الفصل"><br>
+        <input type="number" id="signupAge" placeholder="🎂 العمر"><br>
+        <input type="email" id="signupEmail" placeholder="📧 البريد الإلكتروني"><br>
+        <input type="password" id="signupPassword" placeholder="🔒 كلمة المرور"><br>
+        <button id="doSignupBtn" style="width:100%; margin-top:1rem;">✨ إنشاء حساب جديد</button>
+    </div>
+    <div id="authMessage"></div>
+</div>
+
+<div id="app" class="app-container">
+    <nav class="nav">
+        <div class="logo"><i class="fas fa-infinity"></i> Code Infinity</div>
+        <div class="nav-links">
+            <button class="nav-btn" data-page="dashboard">🎮 لوحة التحكم</button>
+            <button class="nav-btn" data-page="lessons">📚 الدروس</button>
+            <button class="nav-btn" data-page="profile">🏆 ملفي</button>
+            <button class="nav-btn" data-page="about">📌 عن المنصة</button>
+            <button id="logoutBtn" class="nav-btn" style="background:#ef4444; border-color:#ef4444;">🚪 خروج</button>
+        </div>
+    </nav>
+    <div id="pageContent"></div>
+    <footer>⚡ 2025 Code Infinity — تعلم البرمجة بأسلوب الألعاب ⚡</footer>
+</div>
+
+<script>
+    const lessonsDB = {
+        "lesson_1": { title: "🔥 مقدمة في البرمجة", level: "Beginner", content: "أساسيات البرمجة", videoUrl: "https://www.youtube.com/embed/9ndH9Qo05F4", xp: 50, quiz: { question: "ما هي البرمجة؟", options: ["تشغيل الألعاب فقط", "تعليمات للكمبيوتر", "تصميم الصور", "صيانة"], correct: 1 } },
+        "lesson_2": { title: "🌐 أساسيات HTML", level: "Beginner", content: "هيكل المواقع", videoUrl: "https://www.youtube.com/embed/q3yFo-t1ykw", xp: 50, quiz: { question: "وسم العنوان الرئيسي؟", options: ["&lt;p&gt;", "&lt;h1&gt;", "&lt;div&gt;", "&lt;span&gt;"], correct: 1 } },
+        "lesson_3": { title: "🎨 CSS", level: "Beginner", content: "تنسيق المواقع", videoUrl: "https://www.youtube.com/embed/8VH59jP5s1M", xp: 60, quiz: { question: "خاصية لون الخط؟", options: ["background-color", "color", "font-size", "text-align"], correct: 1 } },
+        "lesson_4": { title: "⚡ JavaScript", level: "Intermediate", content: "التفاعل", videoUrl: "https://www.youtube.com/embed/FwxbTGxTcVI", xp: 70, quiz: { question: "دالة التنبيه؟", options: ["log()", "alert()", "prompt()", "write()"], correct: 1 } },
+        "lesson_5": { title: "🧠 منطق البرمجة", level: "Intermediate", content: "حل المشكلات", videoUrl: "https://www.youtube.com/embed/m0jyjCyFw_c", xp: 70, quiz: { question: "جملة الشرط؟", options: ["for", "if", "while", "function"], correct: 1 } },
+        "lesson_6": { title: "🚀 مشروع موقع شخصي", level: "Advanced", content: "تطبيق عملي", videoUrl: "https://www.youtube.com/embed/VzAxCThj_5k", xp: 100, quiz: { question: "ممارسة جيدة؟", options: ["سطر واحد", "فصل الملفات", "بدون وسوم", "تجاهل الجوال"], correct: 1 } }
+    };
+
+    const levelNames = { "Beginner": "مبتدئ", "Intermediate": "متوسط", "Advanced": "متقدم" };
+    const levelXPRequirements = { "Beginner": 0, "Intermediate": 150, "Advanced": 350 };
+
+    // المهمات اليومية
+    const dailyQuestsList = [
+        { id: "daily_lesson", title: "📚 أكمل درس جديد", target: 1, reward: 30, icon: "fa-book", type: "lesson" },
+        { id: "daily_quiz", title: "✅ أجب على 3 أسئلة صحيحة", target: 3, reward: 40, icon: "fa-question", type: "quiz" },
+        { id: "daily_xp", title: "⭐ احصل على 100 XP اليوم", target: 100, reward: 50, icon: "fa-star", type: "xp_gain" }
+    ];
+
+    const availableBadges = [
+        { id: "first_lesson", name: "🎮 أول خطوة", icon: "fa-gamepad", condition: (d) => d.completedLessons.length >= 1 },
+        { id: "quiz_master", name: "🧙 سيد الاختبارات", icon: "fa-hat-wizard", condition: (d) => d.correctQuizzes >= 5 },
+        { id: "xp_100", name: "💎 100 نقطة", icon: "fa-gem", condition: (d) => d.xp >= 100 },
+        { id: "xp_300", name: "👑 300 نقطة", icon: "fa-crown", condition: (d) => d.xp >= 300 },
+        { id: "level_intermediate", name: "⚡ مستوى متوسط", icon: "fa-bolt", condition: (d) => d.currentLevel === "Intermediate" },
+        { id: "level_advanced", name: "🏆 مستوى متقدم", icon: "fa-trophy", condition: (d) => d.currentLevel === "Advanced" },
+        { id: "all_lessons", name: "🏁 خريج", icon: "fa-flag-checkered", condition: (d) => d.completedLessons.length >= 6 }
+    ];
+
+    let currentUser = null;
+    let userData = null;
+
+    // وظائف المهمات اليومية
+    function initDailyQuests() {
+        if (!userData.dailyQuests) {
+            userData.dailyQuests = dailyQuestsList.map(q => ({
+                id: q.id,
+                progress: 0,
+                completed: false,
+                lastReset: new Date().toDateString()
+            }));
+            userData.dailyXP = 0;
+            updateCurrentUserData(userData);
+        } else {
+            // التحقق من إعادة تعيين المهمات يومياً
+            const today = new Date().toDateString();
+            if (userData.dailyQuests[0]?.lastReset !== today) {
+                userData.dailyQuests = dailyQuestsList.map(q => ({
+                    id: q.id,
+                    progress: 0,
+                    completed: false,
+                    lastReset: today
+                }));
+                userData.dailyXP = 0;
+                updateCurrentUserData(userData);
+            }
+        }
+    }
+
+    function updateDailyQuestProgress(type, amount = 1) {
+        if (!userData.dailyQuests) initDailyQuests();
+        let anyCompleted = false;
+        userData.dailyQuests.forEach((quest, idx) => {
+            if (quest.completed) return;
+            const qDef = dailyQuestsList.find(q => q.id === quest.id);
+            if (!qDef) return;
+            if ((type === "lesson" && qDef.type === "lesson") ||
+                (type === "quiz" && qDef.type === "quiz")) {
+                quest.progress += amount;
+            }
+            if (type === "xp_gain" && qDef.type === "xp_gain") {
+                quest.progress += amount;
+            }
+            if (quest.progress >= qDef.target && !quest.completed) {
+                quest.completed = true;
+                anyCompleted = true;
+                addXP(qDef.reward);
+                showNotification(`✨ مهمة مكتملة: ${qDef.title} +${qDef.reward} XP ✨`, "badge");
+                celebrate("badge");
+            }
+        });
+        if (anyCompleted) {
+            updateCurrentUserData(userData);
+            renderCurrentPage();
+        }
+        updateCurrentUserData(userData);
+    }
+
+    function celebrate(type) {
+        canvasConfetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#00ff88', '#ff44cc', '#fbbf24'] });
+    }
+
+    function showNotification(message, type) {
+        const div = document.createElement("div");
+        div.className = type === "xp" ? "xp-notification" : "celebration-toast";
+        div.innerHTML = `<i class="fas ${type === 'xp' ? 'fa-star' : 'fa-award'}"></i> ${message}`;
+        document.body.appendChild(div);
+        setTimeout(() => div.remove(), 2500);
+    }
+
+    function addXP(amount) {
+        const oldLevel = userData.currentLevel;
+        userData.xp += amount;
+        if (userData.dailyXP !== undefined) userData.dailyXP += amount;
+        let newLevel = userData.currentLevel;
+        if (userData.xp >= levelXPRequirements.Advanced && userData.unlockedLevels.includes("Advanced")) newLevel = "Advanced";
+        else if (userData.xp >= levelXPRequirements.Intermediate && userData.unlockedLevels.includes("Intermediate")) newLevel = "Intermediate";
+        userData.currentLevel = newLevel;
+        updateCurrentUserData(userData);
+        if (oldLevel !== newLevel) {
+            celebrate("levelup");
+            showNotification(`🎊 مستوى ${levelNames[newLevel]} مفتوح! 🎊`, "badge");
+        }
+        updateUserBadges();
+        updateDailyQuestProgress("xp_gain", amount);
+        return true;
+    }
+
+    function updateUserBadges() {
+        const earned = availableBadges.filter(b => b.condition(userData)).map(b => b.id);
+        userData.earnedBadges = earned;
+        updateCurrentUserData(userData);
+    }
+
+    function completeLesson(lessonId) {
+        if (userData.completedLessons.includes(lessonId)) return false;
+        const lesson = lessonsDB[lessonId];
+        if (!userData.unlockedLevels.includes(lesson.level)) {
+            alert("⚠️ تحتاج لإنهاء المستوى السابق!");
+            return false;
+        }
+        userData.completedLessons.push(lessonId);
+        updateCurrentUserData(userData);
+        addXP(lesson.xp);
+        updateDailyQuestProgress("lesson", 1);
+
+        let beginnerCount = userData.completedLessons.filter(l => lessonsDB[l]?.level === "Beginner").length;
+        if (beginnerCount >= 3 && !userData.unlockedLevels.includes("Intermediate")) {
+            userData.unlockedLevels.push("Intermediate");
+            showNotification("🌟 المستوى المتوسط مفتوح!", "badge");
+        }
+        let intermediateCount = userData.completedLessons.filter(l => lessonsDB[l]?.level === "Intermediate").length;
+        if (intermediateCount >= 2 && !userData.unlockedLevels.includes("Advanced")) {
+            userData.unlockedLevels.push("Advanced");
+            showNotification("💀 المستوى المتقدم مفتوح!", "badge");
+        }
+        updateCurrentUserData(userData);
+        updateUserBadges();
+        renderCurrentPage();
+        return true;
+    }
+
+    function submitQuiz(lessonId, selectedIdx) {
+        const lesson = lessonsDB[lessonId];
+        if (!lesson) return;
+        if (selectedIdx === lesson.quiz.correct) {
+            if (!userData.correctQuizzes) userData.correctQuizzes = 0;
+            userData.correctQuizzes++;
+            updateCurrentUserData(userData);
+            updateUserBadges();
+            addXP(10);
+            updateDailyQuestProgress("quiz", 1);
+            alert("✅ إجابة صحيحة! +10 XP");
+        } else {
+            alert(`❌ خطأ! الإجابة: ${lesson.quiz.options[lesson.quiz.correct]}`);
+        }
+    }
+
+    // دوال التخزين
+    function getUsersList() { return JSON.parse(localStorage.getItem("codeInfinity_users") || "{}"); }
+    function loadUserDataByEmail(email, password) {
+        const users = getUsersList();
+        const user = users[email];
+        if (user && user.password === password) return { ...user };
+        return null;
+    }
+    function updateCurrentUserData(newData) {
+        if (!currentUser) return;
+        const users = getUsersList();
+        users[currentUser.email] = newData;
+        localStorage.setItem("codeInfinity_users", JSON.stringify(users));
+        userData = newData;
+    }
+    function checkSavedSession() {
+        const savedEmail = localStorage.getItem("codeInfinity_currentUser");
+        if (savedEmail) {
+            const users = getUsersList();
+            const user = users[savedEmail];
+            if (user) {
+                currentUser = { uid: user.uid, email: user.email };
+                userData = { ...user };
+                if (!userData.earnedBadges) userData.earnedBadges = [];
+                if (!userData.correctQuizzes) userData.correctQuizzes = 0;
+                if (!userData.unlockedLevels) userData.unlockedLevels = ["Beginner"];
+                initDailyQuests();
+                document.getElementById("authSection").style.display = "none";
+                document.getElementById("app").style.display = "block";
+                renderCurrentPage();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // عرض المهمات اليومية
+    function renderDailyQuests() {
+        initDailyQuests();
+        const remainingTime = "ينتهي منتصف الليل";
+        return `
+            <div class="card">
+                <h3><i class="fas fa-calendar-alt"></i> ⚔️ المهمات اليومية ⚔️</h3>
+                <div class="daily-quests">
+                    ${userData.dailyQuests.map((quest, idx) => {
+                        const qDef = dailyQuestsList.find(q => q.id === quest.id);
+                        return `
+                            <div class="quest-item ${quest.completed ? 'completed' : ''}">
+                                <div class="quest-icon"><i class="fas ${qDef.icon}"></i></div>
+                                <div class="quest-info">
+                                    <div class="quest-title">${qDef.title}</div>
+                                    <div class="quest-reward">🎁 ${qDef.reward} XP</div>
+                                    <div class="progress-bar" style="height:4px; margin-top:5px;"><div class="progress-fill" style="width:${Math.min(100, (quest.progress / qDef.target) * 100)}%"></div></div>
+                                    <small>${quest.progress}/${qDef.target}</small>
+                                </div>
+                                <div class="quest-status">${quest.completed ? '✅' : '⏳'}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <div class="reset-timer"><i class="fas fa-hourglass-half"></i> تتجدد يومياً عند منتصف الليل</div>
+            </div>
+        `;
+    }
+
+    // زر المشاركة وإنشاء البطاقة
+    async function shareAchievement() {
+        const cardElement = document.getElementById("shareCardPreview");
+        if (!cardElement) return;
+        try {
+            const canvas = await html2canvas(cardElement, { scale: 2, backgroundColor: null });
+            const link = document.createElement("a");
+            link.download = `code_infinity_${userData.fullName}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            showNotification("📸 تم حفظ بطاقة الإنجاز!", "badge");
+            canvasConfetti({ particleCount: 100, spread: 60, origin: { y: 0.8 } });
+        } catch (err) {
+            alert("حدث خطأ، حاول مرة أخرى");
+        }
+    }
+
+    function renderShareCard() {
+        const badgeNames = (userData.earnedBadges || []).slice(0, 3).map(bid => {
+            const b = availableBadges.find(bg => bg.id === bid);
+            return b ? b.name : "";
+        }).filter(n => n);
+        return `
+            <div class="card">
+                <h3><i class="fas fa-share-alt"></i> شارك إنجازك مع أصدقائك!</h3>
+                <div class="share-card-container">
+                    <div class="share-card" id="shareCardPreview">
+                        <div class="share-card-header">🎮 CODE INFINITY 🎮</div>
+                        <div class="share-card-name">${userData.fullName}</div>
+                        <div class="share-card-stats">
+                            <div>⚡ نقاط الخبرة ⚡</div>
+                            <div class="share-card-xp">${userData.xp} XP</div>
+                            <div class="share-card-level">🏅 المستوى: ${levelNames[userData.currentLevel]}</div>
+                        </div>
+                        <div class="share-card-badges">
+                            ${badgeNames.map(b => `<span class="badge">🏆 ${b}</span>`).join('')}
+                            ${badgeNames.length === 0 ? '<span>✨ لم يتم الحصول على شارات بعد ✨</span>' : ''}
+                        </div>
+                        <div class="share-footer">📚 أنجز ${userData.completedLessons.length}/6 مهمات | ✅ ${userData.correctQuizzes || 0} إجابة صحيحة</div>
+                        <div class="share-footer"><i class="fas fa-infinity"></i> Code Infinity - مدرسة الشهيد إبراهيم الرفاعي</div>
+                    </div>
+                </div>
+                <div class="share-buttons">
+                    <button id="downloadShareBtn"><i class="fas fa-download"></i> تحميل كصورة</button>
+                    <button id="copyShareBtn" class="secondary" style="background:rgba(255,68,204,0.2);"><i class="fas fa-copy"></i> نسخ للمشاركة</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // واجهات العرض
+    function renderDashboard() {
+        const completedCount = userData.completedLessons.length;
+        const totalLessons = Object.keys(lessonsDB).length;
+        const progressPercent = (completedCount/totalLessons)*100;
+        const nextLevelXP = userData.currentLevel === "Beginner" ? levelXPRequirements.Intermediate : 
+                           (userData.currentLevel === "Intermediate" ? levelXPRequirements.Advanced : levelXPRequirements.Advanced);
+        return `
+            ${renderDailyQuests()}
+            <div class="card">
+                <h2><i class="fas fa-gamepad"></i> رحلة البطل</h2>
+                <div style="display:flex; justify-content:space-between;">
+                    <span>🏅 المستوى: ${levelNames[userData.currentLevel]}</span>
+                    <span>⚡ XP: ${userData.xp}</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, (userData.xp / nextLevelXP) * 100)}%"></div></div>
+                <div class="progress-bar" style="margin-top:1rem;"><div class="progress-fill" style="width:${progressPercent}%"></div></div>
+                <p>📚 المهمات: ${completedCount}/${totalLessons}</p>
+                <p>✅ الاختبارات: ${userData.correctQuizzes || 0}</p>
+                <button id="gotoLessonsDash">🎯 ابدأ المغامرة →</button>
+            </div>
+            ${renderShareCard()}
+        `;
+    }
+
+    function renderLessons() {
+        let html = `<h2><i class="fas fa-dungeon"></i> مهمات البرمجة</h2><div class="lessons-grid">`;
+        for (let [id, lesson] of Object.entries(lessonsDB)) {
+            const isUnlocked = userData.unlockedLevels.includes(lesson.level);
+            const isCompleted = userData.completedLessons.includes(id);
+            html += `<div class="card" style="${!isUnlocked ? 'opacity:0.5' : ''}">
+                        <span class="level-tag">🏆 ${levelNames[lesson.level]}</span>
+                        <h3>${lesson.title} ${isCompleted ? '✅' : ''}</h3>
+                        <p>${lesson.content}</p>
+                        <p>🎁 XP: ${lesson.xp}</p>
+                        ${isUnlocked ? `<button class="viewLessonBtn" data-id="${id}">🎮 خوض المهمة</button>` : '<button disabled>🔒 مغلق</button>'}
+                    </div>`;
+        }
+        html += `</div><div id="lessonModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); justify-content:center; align-items:center; z-index:1000;"><div class="card" style="max-width:650px; margin:auto; max-height:85vh; overflow:auto;"></div></div>`;
+        return html;
+    }
+
+    function showLessonModal(lessonId) {
+        const lesson = lessonsDB[lessonId];
+        const isCompleted = userData.completedLessons.includes(lessonId);
+        const modalDiv = document.getElementById("lessonModal");
+        const contentDiv = modalDiv.querySelector(".card");
+        contentDiv.innerHTML = `
+            <h3>🎮 ${lesson.title}</h3>
+            <p>${lesson.content}</p>
+            <div class="video-wrapper"><iframe src="${lesson.videoUrl}" frameborder="0" allowfullscreen></iframe></div>
+            <hr><h4>📝 اختبار البطل:</h4>
+            <div>${lesson.quiz.question}</div>
+            ${lesson.quiz.options.map((opt, idx) => `<div class="quiz-option" data-opt="${idx}">🎲 ${opt}</div>`).join("")}
+            ${!isCompleted ? `<button id="markCompleteBtn" style="margin-top:1rem;">✅ أنجز المهمة (+${lesson.xp} XP)</button>` : `<p>✅ مهمة منجزة!</p>`}
+            <button id="closeModalBtn" class="secondary" style="margin-top:1rem;">🔙 رجوع</button>
+        `;
+        modalDiv.style.display = "flex";
+        contentDiv.querySelectorAll(".quiz-option").forEach(opt => {
+            opt.addEventListener("click", () => submitQuiz(lessonId, parseInt(opt.dataset.opt)));
+        });
+        document.getElementById("markCompleteBtn")?.addEventListener("click", () => {
+            completeLesson(lessonId);
+            modalDiv.style.display = "none";
+            renderCurrentPage();
+        });
+        document.getElementById("closeModalBtn").addEventListener("click", () => modalDiv.style.display = "none");
+    }
+
+    function renderProfile() {
+        const completedCount = userData.completedLessons.length;
+        const totalLessons = Object.keys(lessonsDB).length;
+        return `<div class="card"><h2><i class="fas fa-user-astronaut"></i> بطاقة البطل</h2>
+            <p>⚔️ الاسم: ${userData.fullName}</p>
+            <p>📚 الفصل: ${userData.class} | 🎂 العمر: ${userData.age}</p>
+            <hr><h3>📊 الإحصائيات</h3>
+            <p>⚡ XP: ${userData.xp}</p>
+            <p>🏅 المستوى: ${levelNames[userData.currentLevel]}</p>
+            <p>✅ المهمات: ${completedCount}/${totalLessons}</p>
+            <p>🧠 الاختبارات الصحيحة: ${userData.correctQuizzes || 0}</p>
+            <h3>🏆 الجوائز</h3>
+            <div>${availableBadges.map(b => {
+                const earned = userData.earnedBadges?.includes(b.id);
+                return `<span class="badge ${!earned ? 'locked' : ''}" style="${!earned ? 'opacity:0.5' : ''}"><i class="fas ${b.icon}"></i> ${b.name}</span>`;
+            }).join('')}</div>
+        </div>`;
+    }
+
+    function renderAbout() {
+        return `<div class="card"><h2>📌 عن Code Infinity</h2>
+        <p>منصة تعليمية بأسلوب GAMIFICATION في مدرسة الشهيد إبراهيم الرفاعي.</p>
+        <h3>🎮 المميزات:</h3>
+        <ul><li>⭐ مهمات يومية متجددة</li><li>🏆 شارات وإنجازات</li><li>📸 مشاركة الإنجاز كصورة</li><li>⚔️ رفع المستوى وجمع XP</li></ul>
+        <h3>👥 الفريق</h3>
+        <div>${["حسن محمد","محمد تامر","بسمله","اياد العسيلي","اياد","يوسف منتصر","ايان","حازم شومان"].map(n => `<span class="team-member">${n}</span>`).join('')}</div>
+        <p><strong>🎮 إشراف:</strong> مس شيماء خضر</p></div>`;
+    }
+
+    let currentPage = "dashboard";
+    function renderCurrentPage() {
+        const container = document.getElementById("pageContent");
+        if (!container) return;
+        if (currentPage === "dashboard") container.innerHTML = renderDashboard();
+        else if (currentPage === "lessons") container.innerHTML = renderLessons();
+        else if (currentPage === "profile") container.innerHTML = renderProfile();
+        else if (currentPage === "about") container.innerHTML = renderAbout();
+
+        document.getElementById("gotoLessonsDash")?.addEventListener("click", () => { currentPage = "lessons"; renderCurrentPage(); });
+        document.getElementById("downloadShareBtn")?.addEventListener("click", shareAchievement);
+        document.getElementById("copyShareBtn")?.addEventListener("click", async () => {
+            const card = document.getElementById("shareCardPreview");
+            if (card) {
+                try {
+                    const canvas = await html2canvas(card, { scale: 2 });
+                    canvas.toBlob(async (blob) => {
+                        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+                        showNotification("📋 تم نسخ الصورة للحافظة!", "badge");
+                    });
+                } catch(e) { alert("اضغط نسخ الصورة"); }
+            }
+        });
+        if (currentPage === "lessons") {
+            document.querySelectorAll(".viewLessonBtn").forEach(btn => {
+                btn.addEventListener("click", () => showLessonModal(btn.dataset.id));
+            });
+        }
+        document.querySelectorAll(".nav-btn").forEach(btn => {
+            if (btn.dataset.page) {
+                btn.removeEventListener("click", () => {});
+                btn.addEventListener("click", () => { currentPage = btn.dataset.page; renderCurrentPage(); });
+            }
+        });
+    }
+
+    // المصادقة
+    function handleLogin(email, password) {
+        const user = loadUserDataByEmail(email, password);
+        if (user) {
+            if (!user.earnedBadges) user.earnedBadges = [];
+            if (!user.correctQuizzes) user.correctQuizzes = 0;
+            if (!user.unlockedLevels) user.unlockedLevels = ["Beginner"];
+            currentUser = { uid: user.uid, email: user.email };
+            userData = { ...user };
+            localStorage.setItem("codeInfinity_currentUser", email);
+            initDailyQuests();
+            return true;
+        }
+        return false;
+    }
+
+    function handleSignup(fullName, className, age, email, password) {
+        const users = getUsersList();
+        if (users[email]) { alert("هذا البريد موجود!"); return false; }
+        const newUser = {
+            uid: "uid_" + Date.now(), fullName, class: className, age: parseInt(age), email, password,
+            completedLessons: [], xp: 0, correctQuizzes: 0, earnedBadges: [],
+            unlockedLevels: ["Beginner"], currentLevel: "Beginner"
+        };
+        users[email] = newUser;
+        localStorage.setItem("codeInfinity_users", JSON.stringify(users));
+        return newUser;
+    }
+
+    document.getElementById("showLoginBtn")?.addEventListener("click", () => {
+        document.getElementById("loginForm").style.display = "block";
+        document.getElementById("signupForm").style.display = "none";
+    });
+    document.getElementById("showSignupBtn")?.addEventListener("click", () => {
+        document.getElementById("loginForm").style.display = "none";
+        document.getElementById("signupForm").style.display = "block";
+    });
+    document.getElementById("doLoginBtn")?.addEventListener("click", () => {
+        const success = handleLogin(document.getElementById("loginEmail").value, document.getElementById("loginPassword").value);
+        if (success) {
+            document.getElementById("authSection").style.display = "none";
+            document.getElementById("app").style.display = "block";
+            renderCurrentPage();
+        } else {
+            document.getElementById("authMessage").innerHTML = '<div style="background:#ef4444; padding:0.8rem; border-radius:1rem;">❌ بيانات خاطئة</div>';
+            setTimeout(() => document.getElementById("authMessage").innerHTML = "", 2000);
+        }
+    });
+    document.getElementById("doSignupBtn")?.addEventListener("click", () => {
+        const newUser = handleSignup(
+            document.getElementById("signupName").value,
+            document.getElementById("signupClass").value,
+            document.getElementById("signupAge").value,
+            document.getElementById("signupEmail").value,
+            document.getElementById("signupPassword").value
+        );
+        if (newUser) {
+            currentUser = { uid: newUser.uid, email: newUser.email };
+            userData = newUser;
+            localStorage.setItem("codeInfinity_currentUser", newUser.email);
+            initDailyQuests();
+            document.getElementById("authSection").style.display = "none";
+            document.getElementById("app").style.display = "block";
+            renderCurrentPage();
+            celebrate("badge");
+        }
+    });
+    document.getElementById("logoutBtn")?.addEventListener("click", () => {
+        currentUser = null; userData = null;
+        localStorage.removeItem("codeInfinity_currentUser");
+        document.getElementById("authSection").style.display = "block";
+        document.getElementById("app").style.display = "none";
+    });
+
+    checkSavedSession();
+</script>
+</body>
+</html>
